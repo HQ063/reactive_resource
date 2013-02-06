@@ -47,6 +47,20 @@ class ReactiveResource::BaseTest < Test::Unit::TestCase
         @object.addresses
         assert_requested(:get, "https://api.avvo.com/api/1/lawyers/1/addresses.json")
       end
+      
+      should "hit the object specified URL when requested" do
+        stub_request(:get, "https://api.avvo.com/magic.json")\
+          .to_return(:body => [{:lawyer => {:id => '1', :addresses_url => 'https://api.avvo.com/test.json'}}].to_json)
+        @l = ReactiveResource::Lawyer.find_by_url('https://api.avvo.com/magic.json')
+        assert_requested(:get, "https://api.avvo.com/magic.json")
+        assert_equal(@l[0].id, '1')
+        
+        #full functional
+        stub_request(:get, "https://api.avvo.com/test.json")\
+          .to_return(:body =>[ {:address => {:street => "blah"}}].to_json)
+        @l[0].addresses
+        assert_requested(:get, "https://api.avvo.com/test.json")
+      end
     end
 
     context "with a has_one relationship to another object" do

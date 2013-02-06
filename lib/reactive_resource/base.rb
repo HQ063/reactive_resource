@@ -12,6 +12,11 @@ module ReactiveResource
     extend Extensions::RelativeConstGet
     class_attribute :singleton_resource
 
+    def self.find_by_url(url, options = {})
+      prefix_options, query_options = split_options(options[:params])
+      instantiate_collection(format.decode(connection.get(url, headers).body), prefix_options)
+    end
+
     # Call this method to transform a resource into a 'singleton'
     # resource. This will fix the paths Active Resource generates for
     # singleton resources. See

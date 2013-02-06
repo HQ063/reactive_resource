@@ -23,11 +23,31 @@ module ReactiveResource
         end
       end
 
+      def resolve_modes
+        if options[:resolve_modes]
+          options[:resolve_modes]
+        else
+          {:use_url_property => true, :use_nested_url => true}
+        end
+      end
+
       # Called when this assocation is referenced. Finds and returns
       # the targets of this association.
-      def resolve_relationship(object)
-        id_attribute = "#{klass.name.split("::").last.underscore}_id"
-        associated_class.find(:all, :params => object.prefix_options.merge(id_attribute => object.id))
+      def resolve_relationship(object, attribute)
+        ret = nil
+        if(resolve_modes[:use_url_property] == true)
+          if object.attributes["#{attribute.to_s}_url"]
+            ret = associated_class.find_by_url(object.attributes["#{attribute.to_s}_url"])
+          end
+        end
+        if(ret.nil? && resolve_modes[:use_nested_url] == true)
+          id_attribute = "#{klass.name.split("::").last.underscore}_id"
+          ret = associated_class.find(:all, :params => object.prefix_options.merge(id_attribute => object.id))
+        end
+        if ret.nil?
+          ret = []
+        end
+        ret
       end
       
       # Adds methods for has_many associations, to make dealing with
@@ -41,7 +61,7 @@ module ReactiveResource
           # lawyer.addresses
           define_method(attribute) do
             unless instance_variable_get("@#{attribute}")
-              object = association.resolve_relationship(self)
+              object = association.resolve_relationship(self, attribute)
               instance_variable_set("@#{attribute}", object)
             end
             instance_variable_get("@#{attribute}")
