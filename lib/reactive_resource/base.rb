@@ -3,6 +3,18 @@ require 'active_support/all'
 
 module ReactiveResource
 
+  def self.configure
+    yield config
+  end
+
+  def self.config=(config)
+    @config = config
+  end
+
+  def self.config
+    @config ||=Configuration.new
+  end
+
   # The class that all ReactiveResourse resources should inherit
   # from. This class fixes and patches over a lot of the broken stuff
   # in Active Resource, and smoothes out the differences between the
@@ -299,5 +311,21 @@ module ReactiveResource
       @parents ||= belongs_to_associations.map(&:associated_class)
     end
 
+  end
+  
+  class Configuration
+    attr_accessor :resolve_modes
+    
+    @@defaults = {
+      :resolve_modes => {:use_url_property => true, :use_nested_url => true}
+    }
+    
+     def self.defaults
+      @@defaults
+    end
+
+    def initialize
+      @@defaults.each_pair{|k,v| self.send("#{k}=",v)}
+    end
   end
 end

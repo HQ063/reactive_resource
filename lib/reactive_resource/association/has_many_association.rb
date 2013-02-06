@@ -27,7 +27,7 @@ module ReactiveResource
         if options[:resolve_modes]
           options[:resolve_modes]
         else
-          {:use_url_property => true, :use_nested_url => true}
+          ReactiveResource::config.resolve_modes
         end
       end
 
