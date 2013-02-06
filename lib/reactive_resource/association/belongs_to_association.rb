@@ -32,13 +32,30 @@ module ReactiveResource
         end
         attributes.uniq
       end
+      
+      def resolve_modes
+        if options[:resolve_modes]
+          options[:resolve_modes]
+        else
+          {:use_url_property => true, :use_nested_url => true}
+        end
+      end
 
       # Called when this assocation is referenced. Finds and returns
       # the target of this association.
-      def resolve_relationship(object)
-        parent_params = object.prefix_options.dup
-        parent_params.delete("#{attribute}_id".intern)
-        associated_class.find(object.send("#{attribute}_id"), :params => parent_params)
+      def resolve_relationship(object, attribute)
+        ret = nil
+        if(resolve_modes[:use_url_property] == true)
+          if object.attributes["#{attribute.to_s}_url"]
+            ret = associated_class.find_one_by_url(object.attributes["#{attribute.to_s}_url"])
+          end
+        end
+        if(ret.nil? && resolve_modes[:use_nested_url] == true)
+          parent_params = object.prefix_options.dup
+          parent_params.delete("#{attribute}_id".intern)
+          ret = associated_class.find(object.send("#{attribute}_id"), :params => parent_params)
+        end
+        ret
       end
       
       # Adds methods for belongs_to associations, to make dealing with
@@ -72,7 +89,7 @@ module ReactiveResource
             # attr_id, and fire off the find.
             
             unless instance_variable_get("@#{attribute}")
-              object = association.resolve_relationship(self)
+              object = association.resolve_relationship(self, attribute)
               instance_variable_set("@#{attribute}", object)
             end
             instance_variable_get("@#{attribute}")

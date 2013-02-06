@@ -17,6 +17,11 @@ module ReactiveResource
       instantiate_collection(format.decode(connection.get(url, headers).body), prefix_options)
     end
 
+    def self.find_one_by_url(url, options = {})
+      prefix_options, query_options = split_options(options[:params])
+      instantiate_element(format.decode(connection.get(url, headers).body), prefix_options)
+    end
+
     # Call this method to transform a resource into a 'singleton'
     # resource. This will fix the paths Active Resource generates for
     # singleton resources. See
