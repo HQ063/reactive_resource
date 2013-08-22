@@ -31,7 +31,7 @@ module ReactiveResource
 
     def self.find_one_by_url(url, options = {})
       prefix_options, query_options = split_options(options[:params])
-      instantiate_element(format.decode(connection.get(url, headers).body), prefix_options)
+      instantiate_record(format.decode(connection.get(url, headers).body), prefix_options)
     end
 
     # Call this method to transform a resource into a 'singleton'
@@ -312,14 +312,14 @@ module ReactiveResource
     end
 
   end
-  
+
   class Configuration
     attr_accessor :resolve_modes
-    
+
     @@defaults = {
       :resolve_modes => {:use_url_property => true, :use_nested_url => true}
     }
-    
+
      def self.defaults
       @@defaults
     end
