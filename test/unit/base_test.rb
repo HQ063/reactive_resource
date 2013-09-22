@@ -54,12 +54,26 @@ class ReactiveResource::BaseTest < Test::Unit::TestCase
         @l = ReactiveResource::Lawyer.find_by_url('https://api.avvo.com/magic.json')
         assert_requested(:get, "https://api.avvo.com/magic.json")
         assert_equal(@l[0].id, '1')
-        
+
         #full functional
         stub_request(:get, "https://api.avvo.com/test.json")\
           .to_return(:body =>[ {:address => {:street => "blah"}}].to_json)
         @l[0].addresses
         assert_requested(:get, "https://api.avvo.com/test.json")
+      end
+
+      should "not hit another URL when object present" do
+        stub_request(:get, "https://api.avvo.com/api/1/lawyers/1.json")\
+          .to_return(:body => {:lawyer => {:id => '1', :addresses => [{:street => "blah"}]}}.to_json)#
+        @l = ReactiveResource::Lawyer.find(1)
+        assert_requested(:get, "https://api.avvo.com/api/1/lawyers/1.json")
+        assert_equal(@l.id, '1')
+
+        #full functional
+        stub_request(:get, "https://api.avvo.com/api/1/lawyers/1/addresses.json")\
+          .to_return(:body => [{:address => {:id => '1'}}].to_json)#
+        @l.addresses
+        assert_not_requested(:get, "https://api.avvo.com/api/1/lawyers/1/addresses.json")
       end
     end
 
@@ -70,6 +84,20 @@ class ReactiveResource::BaseTest < Test::Unit::TestCase
         @object.id = 1
         @object.headshot
         assert_requested(:get, "https://api.avvo.com/api/1/lawyers/1/headshot.json")
+      end
+
+      should "not hit another URL when object present" do
+        stub_request(:get, "https://api.avvo.com/api/1/lawyers/1.json")\
+          .to_return(:body => {:lawyer => {:id => '1', :headshot => {:id => 1}}}.to_json)#
+        @l = ReactiveResource::Lawyer.find(1)
+        assert_requested(:get, "https://api.avvo.com/api/1/lawyers/1.json")
+        assert_equal(@l.id, '1')
+
+        #full functional
+        stub_request(:get, "https://api.avvo.com/api/1/lawyers/1/headshot.json")\
+          .to_return(:body => {:headshot => {:id => '1'}}.to_json)#
+        @l.headshot
+        assert_not_requested(:get, "https://api.avvo.com/api/1/lawyers/1/headshot.json")
       end
     end
 
@@ -89,6 +117,20 @@ class ReactiveResource::BaseTest < Test::Unit::TestCase
           .to_return(:body => {:address => {:id => '3'}}.to_json)
         ReactiveResource::Address.find(3, :params => {:lawyer_id => 2})
         assert_requested(:get, "https://api.avvo.com/api/1/lawyers/2/addresses/3.json")
+      end
+
+      should "not hit another URL when parent object present" do
+        stub_request(:get, "https://api.avvo.com/api/1/lawyers/2/addresses/3.json")\
+          .to_return(:body => {:address => {:id => '3', :lawyer_id=>2, :lawyer=>{:id=>2}}}.to_json)
+        @l = ReactiveResource::Address.find(3, :params => {:lawyer_id => 2})
+        assert_requested(:get, "https://api.avvo.com/api/1/lawyers/2/addresses/3.json")
+        assert_equal(@l.id, '3')
+
+        #full functional
+        stub_request(:get, "https://api.avvo.com/api/1/lawyers/2.json")\
+          .to_return(:body => {:lawyer => {:id => '2'}}.to_json)#
+        @l.lawyer
+        assert_not_requested(:get, "https://api.avvo.com/api/1/lawyers/2.json")
       end
 
       should "hit the Avvo API with the correct URL when updated" do 

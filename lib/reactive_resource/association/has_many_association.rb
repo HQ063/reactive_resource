@@ -61,8 +61,12 @@ module ReactiveResource
           # lawyer.addresses
           define_method(attribute) do
             unless instance_variable_get("@#{attribute}")
-              object = association.resolve_relationship(self, attribute)
-              instance_variable_set("@#{attribute}", object)
+              if @attributes[attribute]
+                instance_variable_set("@#{attribute}", @attributes[attribute])
+              else
+                object = association.resolve_relationship(self, attribute)
+                instance_variable_set("@#{attribute}", object)
+              end
             end
             instance_variable_get("@#{attribute}")
           end
